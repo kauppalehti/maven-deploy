@@ -1,25 +1,19 @@
 var fs = require('fs');
-var path = require('path');
-var walk = require('fs-walk');
-var JSZip = require('jszip');
 var extend = require('util-extend');
 var exec = require('child_process').exec;
 var defineOpts = require('define-options');
 var semver = require('semver');
 
 var config = {
-        buildDir: 'dist',
         finalName: '{name}',
-        type: 'war',
-        fileEncoding: 'utf-8'
+        type: 'jar'
     },
     validateConfig = defineOpts({
         groupId       : 'string   - the Maven group id.',
-        buildDir      : '?|string - build directory. default "' + config.buildDir + '".',
+        file          : 'string - artifact file path',
         finalName     : '?|stringde - the final name of the file created when the built project is packaged. default "' +
                         config.finalName + '"',
-        type          : '?|string - "jar" or "war". default "' + config.type + '".',
-        fileEncoding  : '?|string - valid file encoding. default "' + config.fileEncoding + '"'
+        type          : '?|string - "jar" or "war". default "' + config.type + '".'
     }),
     validateRepos = defineOpts({
         repositories  : 'object[] - array of repositories, each with id and url to a Maven repository'
@@ -42,14 +36,10 @@ function filterConfig () {
     });
 }
 
-function warPath () {
-    return path.join(config.buildDir, config.finalName + '.' + config.type);
-}
-
 function mvnArgs (repoId, isSnapshot) {
     var args = {
         packaging    : config.type,
-        file         : warPath(),
+        file         : config.file,
         groupId      : config.groupId,
         artifactId   : pkg.name,
         version      : pkg.version
@@ -103,25 +93,7 @@ var maven = {
         filterConfig();
     },
 
-    package: function (done) {
-        var war = new JSZip();
-
-        walk.walkSync(config.buildDir, function (base, file, stat) {
-            if (stat.isDirectory() || file.indexOf(config.finalName) >= 0) {
-                return;
-            }
-            var filePath = path.join(base, file);
-            var data = fs.readFileSync(filePath, {'encoding': config.fileEncoding});
-            war.file(path.relative(config.buildDir, filePath), data);
-        });
-
-        var buffer = war.generate({type:"nodebuffer", compression:'DEFLATE'});
-        fs.writeFileSync(warPath(), buffer);
-        if (done) { done(); }
-    },
-
     install: function (done) {
-        this.package();
         mvn(['install:install-file'], null, true, done);
     },
 
@@ -129,7 +101,6 @@ var maven = {
         if (typeof isSnapshot == 'function') { done = isSnapshot; isSnapshot = false; }
         validateRepos(config);
         config.repositories.forEach(validateRepo);
-        this.package();
         mvn(['deploy:deploy-file'], repoId, isSnapshot, done);
     }
 };
