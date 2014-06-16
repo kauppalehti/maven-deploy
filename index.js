@@ -11,7 +11,7 @@ var config = {
     validateConfig = defineOpts({
         groupId       : 'string   - the Maven group id.',
         file          : 'string - artifact file path',
-        finalName     : '?|stringde - the final name of the file created when the built project is packaged. default "' +
+        finalName     : '?|string - the final name of the file created when the built project is packaged. default "' +
                         config.finalName + '"',
         type          : '?|string - "jar" or "war". default "' + config.type + '".'
     }),
