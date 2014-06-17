@@ -83,7 +83,7 @@ function command (cmd, done) {
 }
 
 function mvn (args, repoId, isSnapshot, done) {
-    command('mvn ' + args.concat(mvnArgs(repoId, isSnapshot)).join(' '), done);
+    command('mvn -B ' + args.concat(mvnArgs(repoId, isSnapshot)).join(' '), done);
 }
 
 var maven = {
